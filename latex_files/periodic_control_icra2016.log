@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014) (preloaded format=pdflatex 2014.9.2)  9 SEP 2015 09:12
+This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014) (preloaded format=pdflatex 2014.9.2)  9 SEP 2015 09:35
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -150,15 +150,7 @@ A
 Missing character: There is no Ò in font ptmb7t!
 Missing character: There is no Ó in font ptmb7t!
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <7> on input line 89.
-Missing character: There is no Ò in font ptmr7t!
-Missing character: There is no Ó in font ptmr7t!
-Missing character: There is no Ò in font ptmr7t!
-Missing character: There is no Ó in font ptmr7t!
-Missing character: There is no Ò in font ptmr7t!
-Missing character: There is no Ó in font ptmr7t!
-Missing character: There is no Ò in font ptmr7t!
-Missing character: There is no Ó in font ptmr7t!
+(Font)              <7> on input line 98.
 Missing character: There is no Ò in font ptmr7t!
 Missing character: There is no Ó in font ptmr7t!
 Missing character: There is no Ò in font ptmr7t!
@@ -175,6 +167,14 @@ Missing character: There is no Ó in font ptmr7t!
 
 
 ]
+Missing character: There is no Ò in font ptmr7t!
+Missing character: There is no Ó in font ptmr7t!
+Missing character: There is no Ò in font ptmr7t!
+Missing character: There is no Ó in font ptmr7t!
+Missing character: There is no Ò in font ptmr7t!
+Missing character: There is no Ó in font ptmr7t!
+Missing character: There is no Ò in font ptmr7t!
+Missing character: There is no Ó in font ptmr7t!
 Missing character: There is no Ò in font ptmr7t!
 Missing character: There is no Ó in font ptmr7t!
 Missing character: There is no Ò in font ptmr7t!
@@ -338,7 +338,7 @@ Before submitting the final camera ready copy, remember to:
 Here is how much of TeX's memory you used:
  883 strings out of 493117
  14430 string characters out of 6135434
- 74181 words of memory out of 5000000
+ 75181 words of memory out of 5000000
  4407 multiletter control sequences out of 15000+600000
  39844 words of font info for 78 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
@@ -355,7 +355,7 @@ pfb></usr/local/texlive/2014/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/
 local/texlive/2014/texmf-dist/fonts/type1/urw/times/utmbi8a.pfb></usr/local/tex
 live/2014/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/local/texlive/2014/
 texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
-Output written on periodic_control_icra2016.pdf (3 pages, 119374 bytes).
+Output written on periodic_control_icra2016.pdf (3 pages, 120130 bytes).
 PDF statistics:
  59 PDF objects out of 1000 (max. 8388607)
  42 compressed objects within 1 object stream
