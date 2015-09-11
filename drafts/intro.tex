@@ -1,0 +1,18 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage[latin1]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage[left=0.75in, right=0.75in, top=0.75in, bottom=0.75in]{geometry}
+\author{Kevin Smith}
+\begin{document}
+	
+	\section{Introduction}
+	
+	\subsection{Fish Tracking Meets Graph Theory}
+	
+	This work simplifies the tracking problem by discretizing the plane of all possible fish coordinates into $N$ discrete locations, known as \textit{nodes}. These nodes may be chosen by any process, such as dividing the region into a grid or clustering historical data to calculate $N$ centroids. While the nodes used in this work were stationary, this is not a requirement. The set of nodes will be denoted by $V$, and the physical location of node $i$ at time $t$ will be represented by the function $V_i(t)$.
+	\\\\
+	The path of a robot is confined to certain \textit{edges} between nodes. An edge is an ordered pair $(i, j)$, with $i, j \in V$, and for each edge a physical path $e(i, j)$ exists that the robot is to follow when moving from node $i$ to node $j$. There need not exist an edge between any pair of nodes, as in some cases, it may not make sense for the robot to move between such nodes, particularly if finding an obstacle-free path between the nodes would be difficult. If $E$ is the set of all edges, then the directed graph $(V, E)$ is the \textit{robot state graph}.
+	
+\end{document}
