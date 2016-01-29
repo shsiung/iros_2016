@@ -15,26 +15,29 @@
 % on the last page of the document
 
 % The following packages can be found on http:\\www.ctan.org
-%\usepackage{graphics} % for pdf, bitmapped graphics files
-%\usepackage{epsfig} % for postscript graphics files
-%\usepackage{mathptmx} % assumes new font selection scheme installed
-%\usepackage{times} % assumes new font selection scheme installed
-%\usepackage{amsmath} % assumes amsmath package installed
-%\usepackage{amssymb}  % assumes amsmath package installed
+\usepackage{graphics} % for pdf, bitmapped graphics files
+\usepackage{epsfig} % for postscript graphics files
+\usepackage{mathptmx} % assumes new font selection scheme installed
+\usepackage{times} % assumes new font selection scheme installed
+\usepackage{amsmath} % assumes amsmath package installed
+\usepackage{amssymb}  % assumes amsmath package installed
 
 \title{\LARGE \bf
-Preparation of Papers for IEEE Sponsored Conferences \& Symposia*
+A Stochastic Controller for Tracking the Periodic Movement of Marine Animals
 }
 
 
-\author{Albert Author$^{1}$ and Bernard D. Researcher$^{2}$% <-this % stops a space
-\thanks{*This work was not supported by any organization}% <-this % stops a space
-\thanks{$^{1}$Albert Author is with Faculty of Electrical Engineering, Mathematics and Computer Science,
-        University of Twente, 7500 AE Enschede, The Netherlands
-        {\tt\small albert.author@papercept.net}}%
-\thanks{$^{2}$Bernard D. Researcheris with the Department of Electrical Engineering, Wright State University,
-        Dayton, OH 45435, USA
-        {\tt\small b.d.researcher@ieee.org}}%
+\author{Kevin Smith$^{1}$, Jerry Hsiung$^{2}$,\\ 
+        Christopher G. Lowe$^{3}$ and Christopher M. Clark$^{4}$% <-this % stops a space
+%\thanks{*This work was not supported by any organization}% <-this % stops a space
+\thanks{$^{1}$Kevin Smith is with the Department of Physics,
+        Harvey Mudd College, Claremont, CA 91711 {\tt\small ksmith@g.hmc.edu}}%
+\thanks{$^{2}$Jerry Hsiung is with the Department of Computer Science, Harvey Mudd College,
+        Dayton, Claremont, CA 91711 {\tt\small shiung@g.hmc.edu}}%
+\thanks{$^{3}$Christopher G. Lowe is with the Department of Biological Sciences,
+California State University Long Beach, Long Beach, CA 90840 {\tt\small clowe@csulb.edu}}%
+\thanks{$^{4}$Christopher M. Clark is with the Department of Engineering, Harvey Mudd College,
+Dayton, Claremont, CA 91711 {\tt\small clark@hmc.edu}}%
 }
 
 
@@ -56,170 +59,388 @@ This electronic document is a ÒliveÓ template. The various components of your pa
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{INTRODUCTION}
+\section{Introduction}
 
-This template provides authors with most of the formatting specifications needed for preparing electronic versions of their papers. All standard paper components have been specified for three reasons: (1) ease of use when formatting individual papers, (2) automatic compliance to electronic requirements that facilitate the concurrent or later production of electronic products, and (3) conformity of style throughout a conference proceedings. Margins, column widths, line spacing, and type styles are built-in; examples of the type styles are provided throughout this document and are identified in italic type, within parentheses, following the example. Some components, such as multi-leveled equations, graphics, and tables are not prescribed, although the various table text styles are provided. The formatter will need to create these components, incorporating the applicable criteria that follow.
+\section{Background}
 
-\section{PROCEDURE FOR PAPER SUBMISSION}
+\section{Modeling}
 
-\subsection{Selecting a Template (Heading 2)}
+  Previous work in fish tracking by an autonomous underwater vehicle (AUV) has been limited to tracking a single individual. However, to monitor entire populations by AUV tracking, it is not feasible to pair a large number of AUVs with the members of a representative sample of the population. Instead, a smaller number of AUVs may track the population by statistical means under a stochastic control. 
+  \\\\
+  Stochastic tracking consists of three steps. First, the problem is simplified by discretizing the space of possible fish locations into a finite graph, so that the fish's location is represented by a node and the fish's movement is represented by an edge. Second, data in the robot's memory of past fish locations is used to generate a \textit{transition model}, which predicts future distributions of fish population density over the graph. Finally, a Markov process to is constructed to control the AUVs' positions on the graph, minimizing the difference between the population densities of the robots and fish at each node and time.
+  
+\subsection{Discretizing the Space}
+  
+  We will represent the fish's location by Cartesian coordinates in the plane of the surface of the water, with the origin set to some latitude / longitude coordinate $O$. Latitude / longitude coordinates of the fish measured during the track are mapped to this plane. Let $r[t]$ denote the $x$-coordinate (distance east of $O$) and $y$-coordinate (distance north of $O$) of the fish at time $t > 0$.
+  \\\\
+  Since the fish's location cannot be determined at regular intervals, the times for which $r[t]$ is defined also fail to occur at regular intervals. Such an uneven sampling is inconvenient for modeling the fish's location. Interpolation is used to generate an approximation $R[t]$ of the fish's location, defined for any $t = kT_{\rm sample}$, where $k$ is a nonnegative integer. For convenience, we may use the notation $R[k] = R[k T_{\rm sample}]$ to index the fish's location by integer $k$. 
+  \\\\
+  This work simplifies the tracking problem by discretizing the plane of all possible fish coordinates into $N$ discrete locations, known as \textit{nodes}. These nodes may be chosen by any process, such as dividing the region into a grid or clustering historical data to calculate $N$ centroids. While the nodes used in this work were stationary, this is not a requirement. The set of nodes will be denoted by $V$, and the physical location of node $i$ at time $t$ will be represented by the function $V_i(t)$.
+  \\\\
+  The path of a robot is confined to certain \textit{edges} between nodes. An edge is an ordered pair $(i, j)$, with $i, j \in V$, and for each edge a physical path $e(i, j)$ exists that the robot is to follow when moving from node $i$ to node $j$. There need not exist an edge between any pair of nodes, as in some cases, it may not make sense for the robot to move between such nodes, particularly if finding an obstacle-free path between the nodes would be difficult. If $E$ is the set of all edges, then the directed graph $(V, E)$ is the \textit{location graph}.
+  
+\subsection{Transition Model}  
+  
+  Since many species of fish show periodic patterns of movement, analysis of previous fish locations may predict future distributions of the fish population over the location graph. These predictions take the form of a \textit{transition model}, which consists of a time-inhomogeneous transition matrix $T[k]$ and a population density vector $\mathbf p[k]$. If $N = |V|$, then $T[k]$ is an $N\times N$ left stochastic matrix in which the $j, i$-th entry indicates the probability of the fish at node $i$ transitioning to node $j$ at time $k$. The population density $\mathbf p[k]$ is a stochastic column vector in which the $i$-th entry is proportional to some measure of the density of the fish population at node $i$ and time $k$. The transition model can either be constructed by fitting a transition matrix to previous fish data and calculating a corresponding population density vector, or a population density vector can be fit to previous data and a corresponding transition matrix be extrapolated. 
+  
+\subsection{Transition Matrix Approach}
+  
+  A transition model may be constructed by generating a transition matrix from previous data. Once the fish's location $R[k]$ is discretized to the $N$ nodes of the graph, we may represent the fish's movement between each time step as $d_i[k]$, defined recursively as follows:
+  \[
+  d_i[k] = \left\{
+  \begin{array}{ll}
+  R[k + 1] & R[k] = i \\
+  d_i[k - 1] & R[k] \ne i, k > 0 \\
+  i & R[k] \ne i, k = 0
+  \end{array}
+  \right.
+  \] 
+  Informally, $d_i[k]$ represents the node that the fish will occupy at time step $k + 1$ if it's location at time step $k$ is node $i$. Of course, we only observe the fish's transition from one source node per time step. If $R[k] = i$ and $R[k + 1] = j$, then we may easily choose $d_i[k] = j$; however, we are left to guess where the fish \textit{would} have gone from some other node $x \ne i$ to choose the value of $d_x[k]$. The above definition makes the guess that, if $R[n + 1] = y$ for the largest $n < k$ at which $R[n] = x$, then $d_x[k] = y$. An alternative definition of $d_i[k]$ may make the guess that $d_i[k] = R[k + 1]$ for any $i$, though such a definition may overemphasize the current location of the fish, at the expense of losing information about the fish's path.
+  \\\\
+  From $d_i[k]$, the transition matrix is calculated as follows:
+  \[
+  T[k]_{i, j} = \sum_{m = 0}^{L} f(m | k, \sigma / T_{\rm sample}) \langle d_j[m] = i \rangle,
+  \]
+  where $L$ is the largest value such that $d_i[L]$ is defined, $f(x | \mu, \sigma)$ is a discrete normal distribution (defined for integers 0 to $L - 1$ with a total sum of 1), and $\langle P \rangle$ is 1 if the proposition $P$ is true and 0 otherwise. The population density vector can then be predicted as
+  \[
+    \mathbf p[k] = \left( \prod_{m = 0}^{k - 1} T[m] \right) \mathbf p[0],
+  \]
+  where $\mathbf p[0]$ can either be an estimate of the population density at $k = 0$ or the vector $\mathbf 1 / N$.
+  
+\subsection{Population Density Approach}
+  
+  Alternatively, a transition model may be constructed by generating a population density vector from previous data. Let $\vec{R}[k] = (x_k, y_k)$ be a vector denoting the fish's location at time step $k$, and let $\vec{V}_i = (x_i, y_i)$ denote the location of node $i$. From these quantities we may define an \textit{attenuation vector} $\mathbf{a}[k]$ as follows:
+  \[
+  \mathbf a_i[k] = e^{-||\vec{R}[k] - \vec{V}_i[k]||^2 / (2 \sigma_{\rm atten}^2)}
+  \]
+  where $\sigma_{\rm atten}$ is a free parameter. Informally, $\mathbf a[k]$ describes the weight of a particular node in the fish's location. If the fish's location at some $k$ precisely equals the location of node $i$, then $\mathbf a_i[k] = 1$; but as the fish moves away from $i$, then $\mathbf a_i[k] \rightarrow 0$. The parameter $\sigma_{\rm atten}$ sets the ``attenuation'' of the a node's assigned weight as the fish moves away from it.
+  \\\\
+  We then define the population density vector as a weighted sum of the attenuation vector:
+  \[
+  \mathbf p[k] = \sum^L_m f(m|k, \sigma / T_{\rm sample}) \mathbf a[m].
+  \]
+  Ideally, we would like to construct a transition matrix $T[k]$ such that $\mathbf{p}[k + 1] = T[k]\mathbf{p}[k]$. In some cases, however, such a construction may not be possible. Instead, we find a $T[k]$ that minimizes $||\mathbf p[k + 1] - T[k]\mathbf p[k] ||^2$, subject to the constraint that $T[k]$ is a stochastic matrix.
 
-First, confirm that you have the correct template for your paper size. This template has been tailored for output on the US-letter paper size. 
-It may be used for A4 paper size if the paper size setting is suitably modified.
+%=====================================================================================================
+%=====================================================================================================
+%=====================================================================================================
+  
+\section{Controller}
+  
+  The final step is to construct a Markov process that will minimize the difference in robot population density and fish population density at each time. Again, there are two approaches: tracking the fish transition matrix, or attempting to match population density directly. In the former case, the robot simply uses the transition matrix generated by the transition model. In the latter case, a feedback control is used to generate a transition matrix at each time step that will match the robot population density to fish population density.
+  \\\\
+  The entries of the robot transition matrix often exhibit periodic behavior. In these cases, performing a Fourier transform of the transition probabilities, filtering out some number of the largest Fourier coefficients, and reconstructing the transition probabilities from these coefficients can fit a sum of sinusoids to entries of the transition matrix.
+  
+\subsection{Feedback Control for Density Tracking}
+  
+  In tracking population density, the objective is to minimize the difference between fish population density $\mathbf p[k]$ and robot population density $\mathbf \rho[k]$. A feedback control may be used to this end. After defining an error vector $\mathbf e[k] = \mathbf p[k] - \mathbf \rho[k]$, This control generates a transition matrix $T[k]$ at each time $k$ as follows:
+  \[
+    T_{j, i}[k] = \left\{ \begin{array}{ll}
+      K \mathbf e_j[k] / (\mathbf \rho_j[k] + \epsilon) & i \ne j \\
+      1 + K' \mathbf e_j[k] / (\mathbf \rho_j[k] + \epsilon) & i = j
+    \end{array} \right.
+  \]
+  The columns are subsequently normalized so that $T[k]$ is a stochastic matrix.
 
-\subsection{Maintaining the Integrity of the Specifications}
+\subsection{Proof of Feedback Control Convergence}
 
-The template is used to format your paper and style the text. All margins, column widths, line spaces, and text fonts are prescribed; please do not alter them. You may note peculiarities. For example, the head margin in this template measures proportionately more than is customary. This measurement and others are deliberate, using specifications that anticipate your paper as one part of the entire proceedings, and not as an independent document. Please do not revise any of the current designations
-
-\section{MATH}
-
-Before you begin to format your paper, first write and save the content as a separate text file. Keep your text and graphic files separate until after the text has been formatted and styled. Do not use hard tabs, and limit use of hard returns to only one return at the end of a paragraph. Do not add any kind of pagination anywhere in the paper. Do not number text heads-the template will do that for you.
-
-Finally, complete content and organizational editing before formatting. Please take note of the following items when proofreading spelling and grammar:
-
-\subsection{Abbreviations and Acronyms} Define abbreviations and acronyms the first time they are used in the text, even after they have been defined in the abstract. Abbreviations such as IEEE, SI, MKS, CGS, sc, dc, and rms do not have to be defined. Do not use abbreviations in the title or heads unless they are unavoidable.
-
-\subsection{Units}
-
-\begin{itemize}
-
-\item Use either SI (MKS) or CGS as primary units. (SI units are encouraged.) English units may be used as secondary units (in parentheses). An exception would be the use of English units as identifiers in trade, such as Ò3.5-inch disk driveÓ.
-\item Avoid combining SI and CGS units, such as current in amperes and magnetic field in oersteds. This often leads to confusion because equations do not balance dimensionally. If you must use mixed units, clearly state the units for each quantity that you use in an equation.
-\item Do not mix complete spellings and abbreviations of units: ÒWb/m2Ó or Òwebers per square meterÓ, not Òwebers/m2Ó.  Spell out units when they appear in text: Ò. . . a few henriesÓ, not Ò. . . a few HÓ.
-\item Use a zero before decimal points: Ò0.25Ó, not Ò.25Ó. Use Òcm3Ó, not ÒccÓ. (bullet list)
-
-\end{itemize}
-
-
-\subsection{Equations}
-
-The equations are an exception to the prescribed specifications of this template. You will need to determine whether or not your equation should be typed using either the Times New Roman or the Symbol font (please no other font). To create multileveled equations, it may be necessary to treat the equation as a graphic and insert it into the text after your paper is styled. Number equations consecutively. Equation numbers, within parentheses, are to position flush right, as in (1), using a right tab stop. To make your equations more compact, you may use the solidus ( / ), the exp function, or appropriate exponents. Italicize Roman symbols for quantities and variables, but not Greek symbols. Use a long dash rather than a hyphen for a minus sign. Punctuate equations with commas or periods when they are part of a sentence, as in
-
-$$
-\alpha + \beta = \chi \eqno{(1)}
-$$
-
-Note that the equation is centered using a center tab stop. Be sure that the symbols in your equation have been defined before or immediately following the equation. Use Ò(1)Ó, not ÒEq. (1)Ó or Òequation (1)Ó, except at the beginning of a sentence: ÒEquation (1) is . . .Ó
-
-\subsection{Some Common Mistakes}
-\begin{itemize}
-
-
-\item The word ÒdataÓ is plural, not singular.
-\item The subscript for the permeability of vacuum ?0, and other common scientific constants, is zero with subscript formatting, not a lowercase letter ÒoÓ.
-\item In American English, commas, semi-/colons, periods, question and exclamation marks are located within quotation marks only when a complete thought or name is cited, such as a title or full quotation. When quotation marks are used, instead of a bold or italic typeface, to highlight a word or phrase, punctuation should appear outside of the quotation marks. A parenthetical phrase or statement at the end of a sentence is punctuated outside of the closing parenthesis (like this). (A parenthetical sentence is punctuated within the parentheses.)
-\item A graph within a graph is an ÒinsetÓ, not an ÒinsertÓ. The word alternatively is preferred to the word ÒalternatelyÓ (unless you really mean something that alternates).
-\item Do not use the word ÒessentiallyÓ to mean ÒapproximatelyÓ or ÒeffectivelyÓ.
-\item In your paper title, if the words Òthat usesÓ can accurately replace the word ÒusingÓ, capitalize the ÒuÓ; if not, keep using lower-cased.
-\item Be aware of the different meanings of the homophones ÒaffectÓ and ÒeffectÓ, ÒcomplementÓ and ÒcomplimentÓ, ÒdiscreetÓ and ÒdiscreteÓ, ÒprincipalÓ and ÒprincipleÓ.
-\item Do not confuse ÒimplyÓ and ÒinferÓ.
-\item The prefix ÒnonÓ is not a word; it should be joined to the word it modifies, usually without a hyphen.
-\item There is no period after the ÒetÓ in the Latin abbreviation Òet al.Ó.
-\item The abbreviation Òi.e.Ó means Òthat isÓ, and the abbreviation Òe.g.Ó means Òfor exampleÓ.
-
-\end{itemize}
-
-
-\section{USING THE TEMPLATE}
-
-Use this sample document as your LaTeX source file to create your document. Save this file as {\bf root.tex}. You have to make sure to use the cls file that came with this distribution. If you use a different style file, you cannot expect to get required margins. Note also that when you are creating your out PDF file, the source file is only part of the equation. {\it Your \TeX\ $\rightarrow$ PDF filter determines the output file size. Even if you make all the specifications to output a letter file in the source - if your filter is set to produce A4, you will only get A4 output. }
-
-It is impossible to account for all possible situation, one would encounter using \TeX. If you are using multiple \TeX\ files you must make sure that the ``MAIN`` source file is called root.tex - this is particularly important if your conference is using PaperPlaza's built in \TeX\ to PDF conversion tool.
-
-\subsection{Headings, etc}
-
-Text heads organize the topics on a relational, hierarchical basis. For example, the paper title is the primary text head because all subsequent material relates and elaborates on this one topic. If there are two or more sub-topics, the next level head (uppercase Roman numerals) should be used and, conversely, if there are not at least two sub-topics, then no subheads should be introduced. Styles named ÒHeading 1Ó, ÒHeading 2Ó, ÒHeading 3Ó, and ÒHeading 4Ó are prescribed.
-
-\subsection{Figures and Tables}
-
-Positioning Figures and Tables: Place figures and tables at the top and bottom of columns. Avoid placing them in the middle of columns. Large figures and tables may span across both columns. Figure captions should be below the figures; table heads should appear above the tables. Insert figures and tables after they are cited in the text. Use the abbreviation ÒFig. 1Ó, even at the beginning of a sentence.
-
-\begin{table}[h]
-\caption{An Example of a Table}
-\label{table_example}
-\begin{center}
-\begin{tabular}{|c||c|}
-\hline
-One & Two\\
-\hline
-Three & Four\\
-\hline
-\end{tabular}
-\end{center}
-\end{table}
+  % Let $\bm \rho$ be the desired population density vector, and let $\bm \rho'_t$ be the AUV population density at time $t$. If the diagonal gain (i.e., the gain for transitions from nodes to themselves) is $k$ and the off-diagonal gain (transitions from nodes to different nodes) is $k'$, then for the matrix
+  % \[
+  %   [k] = \begin{bmatrix} 
+  %       1-k & -k' & \dots & -k' \\
+  %       -k' & 1-k & \dots & -k' \\
+  %       \vdots & \vdots & \ddots & \vdots \\
+  %       -k' & -k' & \dots & 1-k
+  %     \end{bmatrix}
+  % \]
+  % and error $\bm e_t = \bm \rho - \bm \rho'_t$, we will show $\bm e_{t + 1} = [k] \bm e_t$.
+  % \\\\
+  % The feedback control specifies the transition matrix at time $t$ as
+  % \[
+  %   [T]_t = \begin{bmatrix}
+  %     1 + k e_0 / \rho'_0 & k' e_1 / \rho'_1 & \dots & k' e_n / \rho'_n \\
+  %     k' e_0 / \rho'_0 & 1 + k e_1 / \rho'_1 & \dots & k' e_n / \rho'_n \\
+  %     \vdots & \vdots & \ddots & \vdots \\
+  %     k' e_0 / \rho'_0 & k' e_1 / \rho'_1 & \dots & 1 + k e_n / \rho'_n
+  %   \end{bmatrix}_t
+  % \]
+  % so that after a single transition at time $t$, we have $\bm \rho'_{t + 1} = [T]_{t} \bm \rho'_t$. Therefore
+  % \begin{align*}
+  %   \bm e_{t + 1} &= \bm \rho - \bm \rho'_{t + 1} \\
+  %   &= \bm \rho - \begin{bmatrix}
+  %     1 + k e_0 / \rho'_0 & k' e_1 / \rho'_1 & \dots & k' e_n / \rho'_n \\
+  %     k' e_0 / \rho'_0 & 1 + k e_1 / \rho'_1 & \dots & k' e_n / \rho'_n \\
+  %     \vdots & \vdots & \ddots & \vdots \\
+  %     k' e_0 / \rho'_0 & k' e_1 / \rho'_1 & \dots & 1 + k e_n / \rho'_n
+  %   \end{bmatrix}_t \begin{bmatrix} \rho'_0 \\ \rho'_1 \\ \vdots \\ \rho'_n \end{bmatrix}_t \\
+  %   &= \bm \rho - \begin{bmatrix}
+  %     p_0 + k e_0 + k' e_1 + \cdots + k' e_n \\
+  %     k' e_0 + p_1 + k e_1 + \cdots + k' e_n \\
+  %     \vdots \\
+  %     k' e_0 + k' e_1 + \cdots + p_n + k e_n
+  %   \end{bmatrix}_t \\
+  %   &= \bm \rho - \bm \rho'_t - \begin{bmatrix}
+  %     k & k' & \dots & k' \\
+  %     k' & k & \dots & k' \\
+  %     \vdots & \vdots & \ddots & \vdots \\
+  %     k' & k' & \dots & k
+  %   \end{bmatrix} \begin{bmatrix}
+  %     e_0 \\ e_1 \\ \vdots \\ e_n
+  %   \end{bmatrix}_t \\
+  %   &= [k] \bm e_t.
+  % \end{align*}
 
 
-   \begin{figure}[thpb]
-      \centering
-      \framebox{\parbox{3in}{We suggest that you use a text box to insert a graphic (which is ideally a 300 dpi TIFF or EPS file, with all fonts embedded) because, in an document, this method is somewhat more stable than directly inserting a picture.
-}}
-      %\includegraphics[scale=1.0]{figurefile}
-      \caption{Inductance of oscillation winding on amorphous
-       magnetic core versus DC bias magnetic field}
-      \label{figurelabel}
-   \end{figure}
+
+\subsection{Edge Removal}
+  
+  In some cases, it may be necessary to ensure that the robot has zero probability of traversing a particular edge, if such a path would be physically difficult to navigate. In these cases, linear programming may be recursively used to calculate a transition matrix $T[k]$ so that the error
+  \[
+    \left| \left|
+      \left( \prod^{k - 1}_{m = 0} T[m] \right)T[k]\mathbf \rho[0] - \mathbf p[k]
+    \right| \right|^2,
+  \]
+  (where $\mathbf \rho[0]$ is the initial population density of the robots) is minimized subject to the constraint that any entries of $T$ corresponding to a disallowed transition are set to zero.
+%==================================================================================
+
+% \section{MATH}
+
+% Before you begin to format your paper, first write and save the content as a separate text file. Keep your text and graphic files separate until after the text has been formatted and styled. Do not use hard tabs, and limit use of hard returns to only one return at the end of a paragraph. Do not add any kind of pagination anywhere in the paper. Do not number text heads-the template will do that for you.
+
+% Finally, complete content and organizational editing before formatting. Please take note of the following items when proofreading spelling and grammar:
+
+% \subsection{Abbreviations and Acronyms} Define abbreviations and acronyms the first time they are used in the text, even after they have been defined in the abstract. Abbreviations such as IEEE, SI, MKS, CGS, sc, dc, and rms do not have to be defined. Do not use abbreviations in the title or heads unless they are unavoidable.
+
+% \subsection{Units}
+
+% \begin{itemize}
+
+% \item Use either SI (MKS) or CGS as primary units. (SI units are encouraged.) English units may be used as secondary units (in parentheses). An exception would be the use of English units as identifiers in trade, such as Ò3.5-inch disk driveÓ.
+% \item Avoid combining SI and CGS units, such as current in amperes and magnetic field in oersteds. This often leads to confusion because equations do not balance dimensionally. If you must use mixed units, clearly state the units for each quantity that you use in an equation.
+% \item Do not mix complete spellings and abbreviations of units: ÒWb/m2Ó or Òwebers per square meterÓ, not Òwebers/m2Ó.  Spell out units when they appear in text: Ò. . . a few henriesÓ, not Ò. . . a few HÓ.
+% \item Use a zero before decimal points: Ò0.25Ó, not Ò.25Ó. Use Òcm3Ó, not ÒccÓ. (bullet list)
+
+% \end{itemize}
+
+
+% \subsection{Equations}
+
+% The equations are an exception to the prescribed specifications of this template. You will need to determine whether or not your equation should be typed using either the Times New Roman or the Symbol font (please no other font). To create multileveled equations, it may be necessary to treat the equation as a graphic and insert it into the text after your paper is styled. Number equations consecutively. Equation numbers, within parentheses, are to position flush right, as in (1), using a right tab stop. To make your equations more compact, you may use the solidus ( / ), the exp function, or appropriate exponents. Italicize Roman symbols for quantities and variables, but not Greek symbols. Use a long dash rather than a hyphen for a minus sign. Punctuate equations with commas or periods when they are part of a sentence, as in
+
+% $$
+% \alpha + \beta = \chi \eqno{(1)}
+% $$
+
+% Note that the equation is centered using a center tab stop. Be sure that the symbols in your equation have been defined before or immediately following the equation. Use Ò(1)Ó, not ÒEq. (1)Ó or Òequation (1)Ó, except at the beginning of a sentence: ÒEquation (1) is . . .Ó
+
+% \subsection{Some Common Mistakes}
+% \begin{itemize}
+
+
+% \item The word ÒdataÓ is plural, not singular.
+% \item The subscript for the permeability of vacuum ?0, and other common scientific constants, is zero with subscript formatting, not a lowercase letter ÒoÓ.
+% \item In American English, commas, semi-/colons, periods, question and exclamation marks are located within quotation marks only when a complete thought or name is cited, such as a title or full quotation. When quotation marks are used, instead of a bold or italic typeface, to highlight a word or phrase, punctuation should appear outside of the quotation marks. A parenthetical phrase or statement at the end of a sentence is punctuated outside of the closing parenthesis (like this). (A parenthetical sentence is punctuated within the parentheses.)
+% \item A graph within a graph is an ÒinsetÓ, not an ÒinsertÓ. The word alternatively is preferred to the word ÒalternatelyÓ (unless you really mean something that alternates).
+% \item Do not use the word ÒessentiallyÓ to mean ÒapproximatelyÓ or ÒeffectivelyÓ.
+% \item In your paper title, if the words Òthat usesÓ can accurately replace the word ÒusingÓ, capitalize the ÒuÓ; if not, keep using lower-cased.
+% \item Be aware of the different meanings of the homophones ÒaffectÓ and ÒeffectÓ, ÒcomplementÓ and ÒcomplimentÓ, ÒdiscreetÓ and ÒdiscreteÓ, ÒprincipalÓ and ÒprincipleÓ.
+% \item Do not confuse ÒimplyÓ and ÒinferÓ.
+% \item The prefix ÒnonÓ is not a word; it should be joined to the word it modifies, usually without a hyphen.
+% \item There is no period after the ÒetÓ in the Latin abbreviation Òet al.Ó.
+% \item The abbreviation Òi.e.Ó means Òthat isÓ, and the abbreviation Òe.g.Ó means Òfor exampleÓ.
+
+% \end{itemize}
+
+
+% \section{USING THE TEMPLATE}
+
+% Use this sample document as your LaTeX source file to create your document. Save this file as {\bf root.tex}. You have to make sure to use the cls file that came with this distribution. If you use a different style file, you cannot expect to get required margins. Note also that when you are creating your out PDF file, the source file is only part of the equation. {\it Your \TeX\ $\rightarrow$ PDF filter determines the output file size. Even if you make all the specifications to output a letter file in the source - if your filter is set to produce A4, you will only get A4 output. }
+
+% It is impossible to account for all possible situation, one would encounter using \TeX. If you are using multiple \TeX\ files you must make sure that the ``MAIN`` source file is called root.tex - this is particularly important if your conference is using PaperPlaza's built in \TeX\ to PDF conversion tool.
+
+% \subsection{Headings, etc}
+
+% Text heads organize the topics on a relational, hierarchical basis. For example, the paper title is the primary text head because all subsequent material relates and elaborates on this one topic. If there are two or more sub-topics, the next level head (uppercase Roman numerals) should be used and, conversely, if there are not at least two sub-topics, then no subheads should be introduced. Styles named ÒHeading 1Ó, ÒHeading 2Ó, ÒHeading 3Ó, and ÒHeading 4Ó are prescribed.
+
+% \subsection{Figures and Tables}
+
+% Positioning Figures and Tables: Place figures and tables at the top and bottom of columns. Avoid placing them in the middle of columns. Large figures and tables may span across both columns. Figure captions should be below the figures; table heads should appear above the tables. Insert figures and tables after they are cited in the text. Use the abbreviation ÒFig. 1Ó, even at the beginning of a sentence.
+
+% \begin{table}[h]
+% \caption{An Example of a Table}
+% \label{table_example}
+% \begin{center}
+% \begin{tabular}{|c||c|}
+% \hline
+% One & Two\\
+% \hline
+% Three & Four\\
+% \hline
+% \end{tabular}
+% \end{center}
+% \end{table}
+
+
+%    \begin{figure}[thpb]
+%       \centering
+%       \framebox{\parbox{3in}{We suggest that you use a text box to insert a graphic (which is ideally a 300 dpi TIFF or EPS file, with all fonts embedded) because, in an document, this method is somewhat more stable than directly inserting a picture.
+% }}
+%       %\includegraphics[scale=1.0]{figurefile}
+%       \caption{Inductance of oscillation winding on amorphous
+%        magnetic core versus DC bias magnetic field}
+%       \label{figurelabel}
+%    \end{figure}
    
 
-Figure Labels: Use 8 point Times New Roman for Figure labels. Use words rather than symbols or abbreviations when writing Figure axis labels to avoid confusing the reader. As an example, write the quantity ÒMagnetizationÓ, or ÒMagnetization, MÓ, not just ÒMÓ. If including units in the label, present them within parentheses. Do not label axes only with units. In the example, write ÒMagnetization (A/m)Ó or ÒMagnetization {A[m(1)]}Ó, not just ÒA/mÓ. Do not label axes with a ratio of quantities and units. For example, write ÒTemperature (K)Ó, not ÒTemperature/K.Ó
+% Figure Labels: Use 8 point Times New Roman for Figure labels. Use words rather than symbols or abbreviations when writing Figure axis labels to avoid confusing the reader. As an example, write the quantity ÒMagnetizationÓ, or ÒMagnetization, MÓ, not just ÒMÓ. If including units in the label, present them within parentheses. Do not label axes only with units. In the example, write ÒMagnetization (A/m)Ó or ÒMagnetization {A[m(1)]}Ó, not just ÒA/mÓ. Do not label axes with a ratio of quantities and units. For example, write ÒTemperature (K)Ó, not ÒTemperature/K.Ó
 
-\section{CONCLUSIONS}
+% \section{CONCLUSIONS}
 
-A conclusion section is not required. Although a conclusion may review the main points of the paper, do not replicate the abstract as the conclusion. A conclusion might elaborate on the importance of the work or suggest applications and extensions. 
+% A conclusion section is not required. Although a conclusion may review the main points of the paper, do not replicate the abstract as the conclusion. A conclusion might elaborate on the importance of the work or suggest applications and extensions. 
 
-\addtolength{\textheight}{-12cm}   % This command serves to balance the column lengths
-                                  % on the last page of the document manually. It shortens
-                                  % the textheight of the last page by a suitable amount.
-                                  % This command does not take effect until the next page
-                                  % so it should come on the page before the last. Make
-                                  % sure that you do not shorten the textheight too much.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
+% \addtolength{\textheight}{-12cm}   % This command serves to balance the column lengths
+%                                   % on the last page of the document manually. It shortens
+%                                   % the textheight of the last page by a suitable amount.
+%                                   % This command does not take effect until the next page
+%                                   % so it should come on the page before the last. Make
+%                                   % sure that you do not shorten the textheight too much.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Results and Discussion}
 
+\subsection{Simulation}
+Both the feedback control and the periodic control were tested against a historic dataset in a MATLAB simulation. The transition matrix approach was used to generate a transition model from one week of location data of a single fish off the shore of Catalina Island. The fish's behavior during this time was highly periodic, as shown in Figure \ref{fig:periodicFish}. Using this transition model, 100 fish were simulated, and a varying number of AUVs were also simulated using either the feedback control or the periodic control to track this population.
+  \\\\
+  To evaluate the control, we used three error metrics:
+  \begin{enumerate}
+    \item
+    \textbf{Closest AUV Distance} The Closest AUV Distance error tracked the distance from each simulated fish to the closest AUV, averaged across all of the fish and all time steps of the simulation.
+    \item
+    \textbf{Fraction In Range} The Fraction In Range metric tracked the fraction of the simulated fish within some distance of an AUV. Since acoustic tracking is only feasible if the AUV is within a certain range of the tag, this error is useful in determining how many fish would have been lost during a track.
+    \item
+    \textbf{Population Density Error} Population Density Error is a measure between 0 and 1 quantifying the difference between the distribution of simulated fish across the nodes and the distribution of AUVs. For a fish density $\mathbf p_{\rm fish}$ and AUV density $\mathbf p_{\rm AUV}$, this error is calculated as
+    \[
+      e = \sqrt{ \frac 1 2 \left( \mathbf p_{\rm fish} - \mathbf p_{\rm AUV} \right) \cdot \left( \mathbf p_{\rm fish} - \mathbf p_{\rm AUV} \right) }
+    \]
+    For this analysis, $\mathbf p_{\rm AUV}$ is measured from the AUVs' destination nodes; i.e., from the nodes the AUVs are moving towards rather than the nodes to which they are closest at the time.
+  \end{enumerate}
+  
+  \begin{figure}[!ht]
+    \centering
+    \includegraphics[width = 0.7\linewidth]{results/location}
+    \caption{Simulations used a transition model generated from a historical week-long track of a single fish. The above graph shows the fish's coordinates along the East-West and North-South axes from a constant origin.}
+    \label{fig:periodicFish}
+  \end{figure}
+  
+  \subsection{Periodic Control}
+  
+  The periodic control was simulated varying the number of Fourier components kept and the number of AUVs simulated. Since the week of historical data contained 5,040 samples, the resulting transition probability functions contained 2,520 frequency components revealed by an FFT. The periodic control was testing by keeping various numbers of the highest-magnitude frequency components, between 0 (resulting in the AUVs taking random transitions) and 2,520 (in which case the AUVs follow exactly the same transition probabilities as the fish). Also, varying numbers of AUVs, between 1 and 100, were tested.
+  \\\\
+  Figure \ref{fig:periodicMeanDistance} shows the Closest AUV Distance error for each of the combinations of parameters. As would be expected, when more AUVs are present, fish are more likely to be close to an AUV. When 10 or more AUVs are used, i.e., when there are more AUVs than nodes, even random transitions result in an error below 12 meters. 
+  \begin{figure}[!ht]
+    \centering
+    \includegraphics[width = 0.7\linewidth]{results/periodicMeanDistance}
+    \caption{The above plot shows the average distance from a fish to the closest AUV when using the periodic control with varying numbers of AUVs and Fourier components.}
+    \label{fig:periodicMeanDistance}
+  \end{figure}
+  \\\\
+  Figure \ref{fig:periodicFraction} shows the Fraction In Range error for the periodic control. When 50 or more AUVs are present, regardless of the number of Fourier components used, more than 90\% of the simulated fish remain within range of the AUV. This fraction remains above 80\% when there are more AUVs than there are nodes, as long as 10 or more frequency components are kept. But when the number of AUVs falls below the number of nodes, the fraction of fish within range rapidly drop off to the best case of 35\% in the single AUV trials.
+  \begin{figure}[!ht]
+    \centering
+    \includegraphics[width = 0.7\linewidth]{results/periodicFraction}
+    \caption{The above plot shows the fraction of fish within 10 meters of an AUV when using the periodic control. Note that the independent axes are reversed with respect to the graphs in the other periodic control figures.}
+    \label{fig:periodicFraction}
+  \end{figure}
+  \\\\
+  Finally, Figure \ref{fig:periodicDensity} shows the Population Density Error. With 50 or more frequency components and 10 or more robots, this error flattens out between 0.21 and 0.25. The error tends to increase with the number of AUVs, as more AUVs are available to fit the transition model's predicted population density more precisely. Additionally, error tends to decrease as more frequency components are used and the AUV's transition probabilities converge on those of the simulated fish.  
+  \begin{figure}[!ht]
+    \centering
+    \includegraphics[width = 0.7\linewidth]{results/periodicDensity}
+    \caption{The above plot shows the Population Density Error from periodic control simulations.}
+    \label{fig:periodicDensity}
+  \end{figure}
+  
+  \subsection{Feedback Control}
+  
+  The feedback control was simulated with varying numbers of tagged fish, between 0 (resulting in random transitions) and 100; as well as the number of AUVs, also between 0 and 100. Figure \ref{fig:feedbackMeanDistance} shows the Closest AUV Distance error for these parameters. As was the case with the periodic control, if there are significantly more AUVs than there are nodes, the control can perform well even with little information about the fish. Interestingly, after 5 fish are tagged, additional tagged fish have negligible effect on the error (and slightly increase error when only 1 or 2 AUVs are used). Since the simulated fish population in these tests follows the transition model of a single fish, the distribution of fish is unimodal; as such, a single tagged fish is usually sufficient to bring the AUVs near most of the fish.
+  \begin{figure}[!ht]
+    \centering
+    \includegraphics[width = 0.7\linewidth]{results/feedbackMeanDistance}
+    \caption{The above plot shows the average distance from a fish to the closest AUV when using the feedback control with varying numbers of AUVs and tagged fish.}
+    \label{fig:feedbackMeanDistance}
+  \end{figure}
+  \\\\
+  Figure \ref{fig:feedbackFraction} shows the Fraction In Range error for the feedback control. A striking feature of this plot is the dip in the fraction of fish in range when exactly one fish is tagged. When the number of AUVs significantly exceeds the number of nodes, the random transitions when zero fish are tagged result in a uniform distribution of AUVs across the nodes, resulting in a high probability that all fish will share a node with at least one AUV. But when the number of AUVs is comparable to or smaller than the number of nodes, this random distribution strategy fail to achieve a uniform distribution of AUVs. In this case, the information provided by tagged fish is necessary to best-distribute the limited number of AUVs.
+  \begin{figure}[!ht]
+    \centering
+    \includegraphics[width = 0.7\linewidth]{results/feedbackFraction}
+    \caption{The above plot shows the fraction of fish within 10 meters of an AUV when using the feedback control. Note that the independent axes are reversed with respect to the graphs in the other feedback control figures.}
+    \label{fig:feedbackFraction}
+  \end{figure}
+  \\\\
+  Figure \ref{fig:feedbackDensity} shows the Population Density Error. When there are more AUVs than nodes and at least 5 fish are tagged, the error flattens out between 0.10 and 0.13. Again, diminishing returns are evident for tagging more fish; after 1 or 2 fish are tagged, the benefit of additional tagged fish is minimal. In fact, the Population Density Error plot reveals another interesting trend when fewer AUVs are in use. With one AUV, tagging beyond one fish actually \textit{increases} error, from 0.31 when one fish is tagged to 0.43 when all of the fish are tagged. The same effect is visible after tagging more than 5 fish when two AUVs are in use and after 20 fish when 5 AUVs are used. Increasing the number of AUVs seems to increase the number of tagged fish required to optimize the AUVs' population density.
+  \begin{figure}[!ht]
+    \centering
+    \includegraphics[width = 0.7\linewidth]{results/feedbackDensity}
+    \caption{The above plot shows the Population Density Error from feedback control simulations.}
+    \label{fig:feedbackDensity}   
+  \end{figure}
+  
+  \subsection{Trends to Investigate}
+  
+  There are several questions from this data that I wish to investigate further.
+  \begin{enumerate}
+    \item
+    What causes the Mean Distance Error for the periodic control to increase when more than 50 Fourier components are used? Why does the Population Density Error increase when more than 100 Fourier components are used? Why is this increase visible after the same number of Fourier components in both error metrics?
+    \item
+    Can the spike in feedback control error when one fish is tagged and many AUVs are deployed be quantified?
+    \item
+    Feedback control error is increased when more fish are tagged and few AUVs are present, but decreased when more fish are tagged and many AUVs are present. Can this relationship be quantified? What theorems from statistics can be applied here? 
+  \end{enumerate}
+
+\subsection{Field Test}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Conclusion and Future Work}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section*{APPENDIX}
 
-Appendixes should appear before the acknowledgment.
 
 \section*{ACKNOWLEDGMENT}
 
-The preferred spelling of the word ÒacknowledgmentÓ in America is without an ÒeÓ after the ÒgÓ. Avoid the stilted expression, ÒOne of us (R. B. G.) thanks . . .Ó  Instead, try ÒR. B. G. thanksÓ. Put sponsor acknowledgments in the unnumbered footnote on the first page.
-
+This material is based upon work supported by the National Science Foundation under Grant No. 1245813.
+This work was performed in part at the USC Wrigley Institute for Environmental Studies’ Wrigley Marine
+Science Center and at the Claremont Colleges’ Robert J. Bernard Biological Field Station.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-References are important to the reader; therefore, each citation must be complete and correct. If at all possible, references should be commonly available publications.
 
 
 
 \begin{thebibliography}{99}
 
-\bibitem{c1} G. O. Young, ÒSynthetic structure of industrial plastics (Book style with paper title and editor),Ó 	in Plastics, 2nd ed. vol. 3, J. Peters, Ed.  New York: McGraw-Hill, 1964, pp. 15Ð64.
-\bibitem{c2} W.-K. Chen, Linear Networks and Systems (Book style).	Belmont, CA: Wadsworth, 1993, pp. 123Ð135.
-\bibitem{c3} H. Poor, An Introduction to Signal Detection and Estimation.   New York: Springer-Verlag, 1985, ch. 4.
-\bibitem{c4} B. Smith, ÒAn approach to graphs of linear forms (Unpublished work style),Ó unpublished.
-\bibitem{c5} E. H. Miller, ÒA note on reflector arrays (Periodical styleÑAccepted for publication),Ó IEEE Trans. Antennas Propagat., to be publised.
-\bibitem{c6} J. Wang, ÒFundamentals of erbium-doped fiber amplifiers arrays (Periodical styleÑSubmitted for publication),Ó IEEE J. Quantum Electron., submitted for publication.
-\bibitem{c7} C. J. Kaufman, Rocky Mountain Research Lab., Boulder, CO, private communication, May 1995.
-\bibitem{c8} Y. Yorozu, M. Hirano, K. Oka, and Y. Tagawa, ÒElectron spectroscopy studies on magneto-optical media and plastic substrate interfaces(Translation Journals style),Ó IEEE Transl. J. Magn.Jpn., vol. 2, Aug. 1987, pp. 740Ð741 [Dig. 9th Annu. Conf. Magnetics Japan, 1982, p. 301].
-\bibitem{c9} M. Young, The Techincal Writers Handbook.  Mill Valley, CA: University Science, 1989.
-\bibitem{c10} J. U. Duncombe, ÒInfrared navigationÑPart I: An assessment of feasibility (Periodical style),Ó IEEE Trans. Electron Devices, vol. ED-11, pp. 34Ð39, Jan. 1959.
-\bibitem{c11} S. Chen, B. Mulgrew, and P. M. Grant, ÒA clustering technique for digital communications channel equalization using radial basis function networks,Ó IEEE Trans. Neural Networks, vol. 4, pp. 570Ð578, July 1993.
-\bibitem{c12} R. W. Lucky, ÒAutomatic equalization for digital communication,Ó Bell Syst. Tech. J., vol. 44, no. 4, pp. 547Ð588, Apr. 1965.
-\bibitem{c13} S. P. Bingulac, ÒOn the compatibility of adaptive controllers (Published Conference Proceedings style),Ó in Proc. 4th Annu. Allerton Conf. Circuits and Systems Theory, New York, 1994, pp. 8Ð16.
-\bibitem{c14} G. R. Faulhaber, ÒDesign of service systems with priority reservation,Ó in Conf. Rec. 1995 IEEE Int. Conf. Communications, pp. 3Ð8.
-\bibitem{c15} W. D. Doyle, ÒMagnetization reversal in films with biaxial anisotropy,Ó in 1987 Proc. INTERMAG Conf., pp. 2.2-1Ð2.2-6.
-\bibitem{c16} G. W. Juette and L. E. Zeffanella, ÒRadio noise currents n short sections on bundle conductors (Presented Conference Paper style),Ó presented at the IEEE Summer power Meeting, Dallas, TX, June 22Ð27, 1990, Paper 90 SM 690-0 PWRS.
-\bibitem{c17} J. G. Kreifeldt, ÒAn analysis of surface-detected EMG as an amplitude-modulated noise,Ó presented at the 1989 Int. Conf. Medicine and Biological Engineering, Chicago, IL.
-\bibitem{c18} J. Williams, ÒNarrow-band analyzer (Thesis or Dissertation style),Ó Ph.D. dissertation, Dept. Elect. Eng., Harvard Univ., Cambridge, MA, 1993. 
-\bibitem{c19} N. Kawasaki, ÒParametric study of thermal and chemical nonequilibrium nozzle flow,Ó M.S. thesis, Dept. Electron. Eng., Osaka Univ., Osaka, Japan, 1993.
-\bibitem{c20} J. P. Wilkinson, ÒNonlinear resonant circuit devices (Patent style),Ó U.S. Patent 3 624 12, July 16, 1990. 
+\bibitem{c1} PLACE HOLDER
+% \bibitem{c2} W.-K. Chen, Linear Networks and Systems (Book style).	Belmont, CA: Wadsworth, 1993, pp. 123Ð135.
+% \bibitem{c3} H. Poor, An Introduction to Signal Detection and Estimation.   New York: Springer-Verlag, 1985, ch. 4.
+% \bibitem{c4} B. Smith, ÒAn approach to graphs of linear forms (Unpublished work style),Ó unpublished.
+% \bibitem{c5} E. H. Miller, ÒA note on reflector arrays (Periodical styleÑAccepted for publication),Ó IEEE Trans. Antennas Propagat., to be publised.
+% \bibitem{c6} J. Wang, ÒFundamentals of erbium-doped fiber amplifiers arrays (Periodical styleÑSubmitted for publication),Ó IEEE J. Quantum Electron., submitted for publication.
+% \bibitem{c7} C. J. Kaufman, Rocky Mountain Research Lab., Boulder, CO, private communication, May 1995.
+% \bibitem{c8} Y. Yorozu, M. Hirano, K. Oka, and Y. Tagawa, ÒElectron spectroscopy studies on magneto-optical media and plastic substrate interfaces(Translation Journals style),Ó IEEE Transl. J. Magn.Jpn., vol. 2, Aug. 1987, pp. 740Ð741 [Dig. 9th Annu. Conf. Magnetics Japan, 1982, p. 301].
+% \bibitem{c9} M. Young, The Techincal Writers Handbook.  Mill Valley, CA: University Science, 1989.
+% \bibitem{c10} J. U. Duncombe, ÒInfrared navigationÑPart I: An assessment of feasibility (Periodical style),Ó IEEE Trans. Electron Devices, vol. ED-11, pp. 34Ð39, Jan. 1959.
+% \bibitem{c11} S. Chen, B. Mulgrew, and P. M. Grant, ÒA clustering technique for digital communications channel equalization using radial basis function networks,Ó IEEE Trans. Neural Networks, vol. 4, pp. 570Ð578, July 1993.
+% \bibitem{c12} R. W. Lucky, ÒAutomatic equalization for digital communication,Ó Bell Syst. Tech. J., vol. 44, no. 4, pp. 547Ð588, Apr. 1965.
+% \bibitem{c13} S. P. Bingulac, ÒOn the compatibility of adaptive controllers (Published Conference Proceedings style),Ó in Proc. 4th Annu. Allerton Conf. Circuits and Systems Theory, New York, 1994, pp. 8Ð16.
+% \bibitem{c14} G. R. Faulhaber, ÒDesign of service systems with priority reservation,Ó in Conf. Rec. 1995 IEEE Int. Conf. Communications, pp. 3Ð8.
+% \bibitem{c15} W. D. Doyle, ÒMagnetization reversal in films with biaxial anisotropy,Ó in 1987 Proc. INTERMAG Conf., pp. 2.2-1Ð2.2-6.
+% \bibitem{c16} G. W. Juette and L. E. Zeffanella, ÒRadio noise currents n short sections on bundle conductors (Presented Conference Paper style),Ó presented at the IEEE Summer power Meeting, Dallas, TX, June 22Ð27, 1990, Paper 90 SM 690-0 PWRS.
+% \bibitem{c17} J. G. Kreifeldt, ÒAn analysis of surface-detected EMG as an amplitude-modulated noise,Ó presented at the 1989 Int. Conf. Medicine and Biological Engineering, Chicago, IL.
+% \bibitem{c18} J. Williams, ÒNarrow-band analyzer (Thesis or Dissertation style),Ó Ph.D. dissertation, Dept. Elect. Eng., Harvard Univ., Cambridge, MA, 1993. 
+% \bibitem{c19} N. Kawasaki, ÒParametric study of thermal and chemical nonequilibrium nozzle flow,Ó M.S. thesis, Dept. Electron. Eng., Osaka Univ., Osaka, Japan, 1993.
+% \bibitem{c20} J. P. Wilkinson, ÒNonlinear resonant circuit devices (Patent style),Ó U.S. Patent 3 624 12, July 16, 1990. 
 
 
 
