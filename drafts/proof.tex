@@ -1,0 +1,60 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage[latin1]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{bm}
+\usepackage[margin=1in]{geometry}
+\author{Kevin Smith}
+\begin{document}
+	
+	\subsection*{Proof of Feedback Control Convergence}
+	
+	Let $\bm \rho$ be the desired population density vector, and let $\bm \rho'_t$ be the AUV population density at time $t$. If the diagonal gain (i.e., the gain for transitions from nodes to themselves) is $k$ and the off-diagonal gain (transitions from nodes to different nodes) is $k'$, then for the matrix
+	\[
+		[k] = \begin{bmatrix} 
+				1-k & -k' & \dots & -k' \\
+				-k' & 1-k & \dots & -k' \\
+				\vdots & \vdots & \ddots & \vdots \\
+				-k' & -k' & \dots & 1-k
+			\end{bmatrix}
+	\]
+	and error $\bm e_t = \bm \rho - \bm \rho'_t$, we will show $\bm e_{t + 1} = [k] \bm e_t$.
+	\\\\
+	The feedback control specifies the transition matrix at time $t$ as
+	\[
+		[T]_t = \begin{bmatrix}
+			1 + k e_0 / \rho'_0 & k' e_1 / \rho'_1 & \dots & k' e_n / \rho'_n \\
+			k' e_0 / \rho'_0 & 1 + k e_1 / \rho'_1 & \dots & k' e_n / \rho'_n \\
+			\vdots & \vdots & \ddots & \vdots \\
+			k' e_0 / \rho'_0 & k' e_1 / \rho'_1 & \dots & 1 + k e_n / \rho'_n
+		\end{bmatrix}_t
+	\]
+	so that after a single transition at time $t$, we have $\bm \rho'_{t + 1} = [T]_{t} \bm \rho'_t$. Therefore
+	\begin{align*}
+		\bm e_{t + 1} &= \bm \rho - \bm \rho'_{t + 1} \\
+		&= \bm \rho - \begin{bmatrix}
+			1 + k e_0 / \rho'_0 & k' e_1 / \rho'_1 & \dots & k' e_n / \rho'_n \\
+			k' e_0 / \rho'_0 & 1 + k e_1 / \rho'_1 & \dots & k' e_n / \rho'_n \\
+			\vdots & \vdots & \ddots & \vdots \\
+			k' e_0 / \rho'_0 & k' e_1 / \rho'_1 & \dots & 1 + k e_n / \rho'_n
+		\end{bmatrix}_t \begin{bmatrix} \rho'_0 \\ \rho'_1 \\ \vdots \\ \rho'_n \end{bmatrix}_t \\
+		&= \bm \rho - \begin{bmatrix}
+			p_0 + k e_0 + k' e_1 + \cdots + k' e_n \\
+			k' e_0 + p_1 + k e_1 + \cdots + k' e_n \\
+			\vdots \\
+			k' e_0 + k' e_1 + \cdots + p_n + k e_n
+		\end{bmatrix}_t \\
+		&= \bm \rho - \bm \rho'_t - \begin{bmatrix}
+			k & k' & \dots & k' \\
+			k' & k & \dots & k' \\
+			\vdots & \vdots & \ddots & \vdots \\
+			k' & k' & \dots & k
+		\end{bmatrix} \begin{bmatrix}
+			e_0 \\ e_1 \\ \vdots \\ e_n
+		\end{bmatrix}_t \\
+		&= [k] \bm e_t.
+	\end{align*}
+
+	
+\end{document}

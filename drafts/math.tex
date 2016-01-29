@@ -1,0 +1,158 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage[latin1]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{bm}
+\usepackage{framed}
+\author{Kevin Smith}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{proposition}{Proposition}[section]
+
+\begin{document}
+	
+	\section{Discrete-Time Transition Models}
+	
+	\subsection{Definitions}
+	
+	\theoremstyle{definition}
+	\begin{definition}{Transition Model}
+		A \textit{transition model} is a quintuple $\Theta = (V, K, T, \bm \rho)$ consisting of the following:
+		\begin{enumerate}
+			\item
+			$V$, a set of nodes $V = \{1, 2, \dots, n\}$
+			\item
+			$K$, a set of discrete times $K = \{0, 1, \dots, L\}$
+			\item
+			$T$, a \textit{transition function} $T: K \rightarrow \text{M}_n$
+			\item
+			$\bm \rho$, a \textit{population density function} $\bm \rho: K \rightarrow \mathbb R^n$
+		\end{enumerate}
+		These elements obey the following properties:
+		\begin{enumerate}
+			\item
+			For each $k \in K - \{L\}$, $T(k)$ is defined, and $T(k)$ is a right stochastic $n \times n$ matrix.
+			\item
+			For each $k \in K$, $\bm \rho(k)$ is defined, and $\bm \rho(k)$ is a stochastic column vector.
+			\item
+			For each $k \in K - \{L\}$, it is true that $\bm \rho(k + 1) = T(k) \bm \rho(k)$.
+		\end{enumerate}
+	\end{definition}
+
+	\begin{definition}{Individuals}
+		Let $\Theta = (V, K, T, \bm \rho)$ be a transition model. An \textit{individual} $\iota$ on $\Theta$ is a mapping $\iota: K \rightarrow V$, such that $\iota(k)$ is defined for all $k \in K$, and for each $k \in K - \{0\}$, $\iota(k)$ is chosen from a discrete probability distribution in which the probability that $\iota(k) = i$ is $\rho_i(k)$.
+	\end{definition}
+	
+	\begin{definition}{Populations, Occupancy, and Population Density}
+		Let $\Theta = (V, K, T, \bm \rho)$ be a transition model, and let $I$ be a set of $n$ individuals on $\Theta$. The \textit{node occupancy} $N(I, i, k)$ of node $i$ and time $k$ for the population $I$ is defined as
+		\[
+			N(I, i, k) = \left| \{\iota \in I ~|~ \iota(k) = i\} \right|
+		\]
+		The \textit{occupancy vector} $\bm o(I, k)$ is the vector such that $o_i(I, k) = N(I, i, k)$, which we note must sum to $n$. The \textit{population density} $\bm p(k)$ of the set of individuals $I$ at time $k \in K$ is the column vector $\bm p$, where 
+		\[
+			p_i = \frac 1 n N(I, i k)
+		\]
+		The set $I$ is called a \textit{population} if its population density $\bm p(0) = \bm \rho(0)$.
+	\end{definition}
+	
+	\begin{proposition}
+		Let $\Theta = (V, K, T, \bm \rho)$ be a transition model. For any $t \in K$,
+		\[
+		\bm \rho(t) = \left( \prod^{t - 1}_{k = 0} T(t - 1 - k) \right) \bm \rho(0)
+		\]
+	\end{proposition}
+	Proof: If $t = 0$, the proof is trivial. Otherwise, assume the proposition is true for some $t = t'$. Then if $t = t' + 1$, we have
+	\begin{align*}
+		\bm \rho(t' + 1) &= T(t')\bm \rho(t') \\
+		&= T(t') \left( \prod^{t' - 1}_{k = 0} T(t' - 1 - k) \right) \bm \rho(0) \\
+		&= \left( \prod^{t'}_{k = 0} T(t' - k) \right) \bm \rho(0)
+	\end{align*}
+	Thus the proposition follows by induction.
+
+	
+	\subsection{Statistics of Populations}
+	
+	All individuals in a population $I$ on a transition model $\Theta = (V, K, T, \bm \rho)$ constitute independent discrete random variables, where outcomes $V$ are chosen with respective probabilities $\bm \rho(k)$. Thus, the population's occupancy vector $\bm o(k)$ is a random variable chosen from a multinomial distribution. From this observation, we immediately note several properties of the statistics of a population's occupancy:
+	
+	\begin{proposition}
+		Let $\Theta = (V, K, T, \bm \rho)$ be a transition model, and let $I$ be a population of $n$ individuals on $\Theta$. The following are true:
+		
+		\begin{enumerate}
+			\item 
+			The probability of obtaining a node occupancy vector $\bm o(k)$ from $I$ is
+					\[
+					\text P(\bm o(k) ~|~ \Theta) = n! \prod^{|V|}_{i = 1} \frac{\rho_i(k)^{o_i}}{o_i!}
+					\]
+			\item
+			The mean occupancy for each node is given by $\langle \bm o(k) \rangle = n\bm \rho(k)$.
+			
+			\item
+			The covariance matrix for this occupancy distribution is
+			\[
+				\bm \Sigma_{ij}(k) = \left\{ \begin{array}{ll}
+				n\rho_i(k)(1 - \rho_i(k)) & i = j \\
+				n\rho_i(k) \rho_j(k) & i \ne j
+				\end{array} \right.
+			\]
+			
+			\item
+			When $n$ is large, we can approximate the $\bm o(k)$ distribution by the normal distribution $\text P(\bm o(k) ~|I~\Theta) \approx \mathcal N(\bm \rho(k), \bm \Sigma)$, where $\bm \Sigma$ is the covariance matrix defined above.
+			
+		\end{enumerate}
+			
+		\end{proposition}
+		
+		Proof: These are all properties of a multinomial distribution.
+	
+	\subsection{Transition Model Fitting}
+	
+	Suppose we have a set of nodes $V$ and times $K$, as well as occupancy vector observations $\bm o(k)$ for each $k \in K$, and we wish to fit a transition model $\Theta = (V, K, T, \bm \rho)$ to explain these occupancy observations. We would be wise to find choose $\Theta$ so that the probability of these observations $\bm o(k)$ given $\Theta$ is maximized. Since each observation is an independent event, we compute this probability as 
+	\[
+		\text P(\bm o(0), \bm o(1), \dots, \bm o(L) | \Theta) = \prod^L_{k = 0} \text P(\bm o(k)|\Theta)
+	\]
+	Fortunately, we can simplify this optimization problem by maximizing the log likelihood function
+	\begin{align*}
+		\log \mathcal L &= \sum^{|K| - 1}_{k = 0} \log \text P(\bm o(k)|\Theta) \\
+		&= \sum^{|K| - 1}_{k = 0} \log \left[ n! \prod^{|V|}_{i = 1} \frac{\rho_i(k)^{o_i(k)}}{o_i(k)!} \right] \\
+		&= \sum^{|K| - 1}_{k = 0} \log n! + \sum^{|V|}_{i = 1} o_i(k) \log \rho_i(k) - \log{o_i(k)!} \\
+		&= C + \sum^{|K| - 1}_{k = 0} \sum^{|V|}_{i = 1} o_i(k) \log \rho_i(k)
+	\end{align*}
+	where $C$ is a constant function of $n!$ and $\bm o(k)$. This leads to the following important result: 
+	
+	\begin{proposition}
+		Let $\bm o(k)$ be a sequence of observation vectors over a set of nodes $V$ and times $K$. To find a transition model $\Theta = (V, K, T, \bm \rho)$ maximizing the log likelihood of these observations, it is sufficient to find $\Theta$ that maximizes the quantity
+		\[
+			\ell = \sum^{|K| - 1}_{k = 0} \sum^{|V|}_{i=1} o_i(k) \log \rho_i(k)
+		\]
+	\end{proposition}
+	
+	Suppose that the transition matrix $T$ is determined by a set of parameters $\{a_1, a_2, \dots, a_m\}$. Then we compute
+	\[
+		\frac{\partial \ell}{\partial a_s} = \sum^{|K| - 1}_{t = 0} \sum^{|V|}_{n = 1} \frac{\partial \ell}{\partial \rho_n(t)} \frac{\partial \rho_n(t)}{\partial a_s}
+	\]
+	where each population density $\rho_n(t)$ varies with $a_s$ as
+	\[
+		\frac{\partial \rho_n(t)}{\partial a_s} = 
+		\sum^{|K| - 1}_{k = 0} \sum^{|V|}_{i = 1} \sum^{|V|}_{j = 1} \frac{\partial \rho_n(t)}{\partial T_{ij}(k)}\frac{\partial T_{ij}(k)}{\partial a_s}
+	\]
+	and $\rho_n(t)$ varies with the transition matrix entry $T_{ij}(k)$ as
+	\[
+		\frac{\partial \rho_n(t)}{\partial T_{ij}(k)} = 
+		\sum^{|V|}_{m = 1} \frac{\partial}{\partial T_{ij}(k)} \left[ T_{nm}(t - 1) \rho_m(t - 1) \right]
+	\]
+	Note that the population density $\rho_n(t)$ has no dependence on $T_{ij}(k)$ if $k > t - 1$. Furthermore, if $k = t - 1$, then the above expression reduces to $\rho_j(t - 1)$. Noting these simplifications, we can write
+	\[
+		\frac{\partial \rho_n(t)}{\partial T_{ij}(k)} = \left\{
+		\begin{array}{ll}
+		0 & k + 1 > t \\
+		p_j(t - 1) & k + 1 = t \\
+		\sum^{|V|}_{m = 1} T_{nm}(t - 1) \frac{\partial \rho_m(t - 1)}{\partial T_{ij}(k)} & k + 1 < t
+		\end{array}
+		\right.
+	\]
+	Such a recursive definition for $\partial \rho_n(t) / \partial T_{ij}(k)$ facilitates the computation of a gradient for $\ell$ with respect to the parameters $a_s$ using dynamic programming. Once such a gradient function is constructed, an optimization strategy like gradient descent can find the parameters to optimize $\ell$.
+	
+\end{document}
